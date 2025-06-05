@@ -1,8 +1,7 @@
-%%writefile requirements.txt
 streamlit
 llama-index
-llama-index-core
-llama-index-embeddings-huggingface
 llama-index-llms-groq
+llama-index-embeddings-huggingface
 requests
+llama-index-core
 beautifulsoup4
