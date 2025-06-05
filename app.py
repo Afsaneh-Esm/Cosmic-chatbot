@@ -23,20 +23,6 @@ html, body, [class*="css"] {
 <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
 """, unsafe_allow_html=True)
 
-# API keys
-os.environ["GROQ_API_KEY"] = "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"
-NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
-
-# LLM & Embeddings
-embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
-Settings.embed_model = embed_model
-llm = Groq(model="llama3-70b-8192", api_key=os.environ["GROQ_API_KEY"])
-Settings.llm = llm
-
-# Load Index
-storage_context = StorageContext.from_defaults(persist_dir="storage")
-index = load_index_from_storage(storage_context)
-
 
 # Helper Functions
 def get_apod_image():
@@ -79,6 +65,20 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
+
+# API keys
+os.environ["GROQ_API_KEY"] = "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"
+NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
+
+# LLM & Embeddings
+embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
+Settings.embed_model = embed_model
+llm = Groq(model="llama3-70b-8192", api_key=os.environ["GROQ_API_KEY"])
+Settings.llm = llm
+
+# Load Index
+storage_context = StorageContext.from_defaults(persist_dir="storage")
+index = load_index_from_storage(storage_context)
 
 # UI Layout
 
