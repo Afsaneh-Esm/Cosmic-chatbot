@@ -5,3 +5,4 @@ llama-index-embeddings-huggingface
 requests
 llama-index-core
 beautifulsoup4
+feedparser
