@@ -98,7 +98,7 @@ if img_url:
 
 # NASA News
 st.subheader("📰 Latest NASA News")
-for title, link in get_latest_nasa_news_rss():
+for title, link in get_nasa_news():
     st.markdown(f"- [{title}]({link})")
 
 # Sidebar Info
