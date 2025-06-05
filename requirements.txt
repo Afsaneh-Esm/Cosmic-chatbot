@@ -6,3 +6,5 @@ requests
 llama-index-core
 beautifulsoup4
 feedparser
+torch
+sentence-transformers
