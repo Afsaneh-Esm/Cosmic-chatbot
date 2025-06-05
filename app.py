@@ -28,7 +28,7 @@ os.environ["GROQ_API_KEY"] = "gsk_dnKtpGB9W0PpcQPmOaqLWGdyb3FYB6e2FPG2PbAj10S4DD
 NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
 
 # LLM & Embeddings
-embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2")
+embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
 Settings.embed_model = embed_model
 llm = Groq(model="llama3-70b-8192", api_key=os.environ["GROQ_API_KEY"])
 Settings.llm = llm
