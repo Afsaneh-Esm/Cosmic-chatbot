@@ -28,8 +28,8 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # ─────────────── 3. API Keys and LLM ───────────────
-os.environ["GROQ_API_KEY"] = "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"
-NASA_API_KEY = "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"
+os.environ["GROQ_API_KEY"] = "your_groq_api_key"
+NASA_API_KEY = "your_nasa_api_key"
 
 embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
 Settings.embed_model = embed_model
@@ -72,24 +72,42 @@ def get_next_full_moon():
     except:
         return "Lunar data unavailable."
 
-def get_wikipedia_summary(query):
-    fallback_summaries = {
-        "jupiter": "Jupiter is primarily composed of hydrogen (~90%) and helium (~10%), with trace amounts of methane, ammonia, water vapor, and other compounds.",
-        "saturn": "Saturn is a gas giant composed mostly of hydrogen and helium, with a dense core of rock and metal.",
-        "mars": "Mars is a terrestrial planet with a thin atmosphere, primarily composed of carbon dioxide, and has surface features reminiscent of both the Moon and Earth.",
-        "venus": "Venus has a thick atmosphere composed mostly of carbon dioxide with clouds of sulfuric acid, making it the hottest planet in the Solar System.",
-    }
+def extract_topic(query):
+    keywords = re.findall(r"\b[a-zA-Z]{3,}(?:\s[a-zA-Z]{3,})?\b", query)
+    return keywords[-1] if keywords else "space"
+
+def get_wikipedia_fallback(topic):
     try:
-        topic_candidates = re.findall(r"\b[A-Z][a-zA-Z']{2,}\b", query)
-        topic = topic_candidates[-1].lower() if topic_candidates else "jupiter"
+        topic = topic.replace(" ", "_")
         url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
         response = requests.get(url)
         if response.status_code == 200:
-            data = response.json()
-            return data.get("extract", fallback_summaries.get(topic, "No Wikipedia summary available."))
-        return fallback_summaries.get(topic, "No Wikipedia summary available.")
+            return response.json().get("extract", "No fallback available.")
+        return "No fallback available."
     except:
-        return "Wikipedia fetch failed."
+        return "Wikipedia fallback error."
+
+def get_duckduckgo_summary(topic):
+    try:
+        url = f"https://api.duckduckgo.com/?q={topic}&format=json"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            abstract = data.get("Abstract")
+            return abstract if abstract else "No fallback info found."
+        return "DuckDuckGo fallback failed."
+    except:
+        return "DuckDuckGo fallback error."
+
+def get_fallback_summary(query):
+    topic = extract_topic(query)
+    wiki = get_wikipedia_fallback(topic)
+    if wiki and "No fallback" not in wiki:
+        return wiki
+    duck = get_duckduckgo_summary(topic)
+    if duck and "No fallback" not in duck:
+        return duck
+    return "No fallback summary available."
 
 def search_arxiv(query, max_results=10):
     try:
@@ -130,10 +148,10 @@ st.sidebar.markdown(get_next_full_moon())
 # ───── Chat Section ─────
 if query:
     with st.spinner("🔄 Retrieving answer from the cosmos..."):
-        wiki_context = get_wikipedia_summary(query)
+        wiki_context = get_fallback_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
 
-        if wiki_context and "No Wikipedia" not in wiki_context:
+        if wiki_context and "No fallback" not in wiki_context:
             final_context = wiki_context + "\n\n" + live_context
         else:
             arxiv_texts = search_arxiv(query)
@@ -143,7 +161,6 @@ if query:
             arxiv_context = "\n\n".join([n.get_content()[:500] for n in nodes])
             final_context = wiki_context + "\n\n" + live_context + "\n\n" + arxiv_context
 
-        # Add manual fallback for known compositions
         if "jupiter" in query.lower() and "composition" in query.lower():
             fallback_info = "Jupiter is composed mostly of hydrogen (~90%) and helium (~10%), with small amounts of methane, ammonia, and water vapor."
             final_context += "\n\n" + fallback_info
@@ -170,4 +187,3 @@ Answer:
         st.markdown(response.text)
 else:
     st.info("Enter a question about the cosmos to begin your journey! 🚀")
-
