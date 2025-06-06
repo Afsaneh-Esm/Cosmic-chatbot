@@ -72,7 +72,11 @@ def get_next_full_moon():
         rows = soup.find("table", class_="tb-sm").find_all("tr")
         for row in rows:
             if "Full Moon" in row.text:
-                return "🌕 Next full moon: " + row.get_text(" ", strip=True)
+                date_info = row.get_text(" ", strip=True)
+                return f"🌕 Next full moon: {date_info}"
+        return "Full moon data not found."
+    except:
+        return "Lunar data unavailable."
     except:
         return "Lunar data unavailable."
 
