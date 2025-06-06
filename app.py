@@ -11,6 +11,7 @@ from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
+import ephem
 
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
@@ -65,18 +66,13 @@ def get_solar_activity():
     except:
         return "No solar activity data."
 
+
 def get_next_full_moon():
     try:
-        res = requests.get("https://www.timeanddate.com/moon/phases/")
-        soup = BeautifulSoup(res.text, "html.parser")
-        rows = soup.find("table", class_="tb-sm").find_all("tr")
-        for row in rows:
-            if "Full Moon" in row.text:
-                date_info = row.get_text(" ", strip=True)
-                return f"🌕 Next full moon: {date_info}"
-        return "Full moon data not found."
-    except:
-        return "Lunar data unavailable."
+        next_full = ephem.next_full_moon(ephem.now())
+        return f"🌕 Next full moon: {next_full.datetime().strftime('%Y-%m-%d %H:%M UTC')}"
+    except Exception as e:
+        return f"Lunar data unavailable: {e}"
 
 
 def get_topic_embedding_match(query):
