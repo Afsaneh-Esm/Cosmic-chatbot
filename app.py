@@ -71,9 +71,20 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
-def extract_topic(query):
-    query = re.sub(r"[?.,!]", "", query.lower())
+def normalize_topic(word):
+    if word.endswith("ies"):
+        return word[:-3] + "y"
+    elif word.endswith("es"):
+        return word[:-2]
+    elif word.endswith("s") and not word.endswith("ss"):
+        return word[:-1]
+    return word
 
+def extract_topic(query):
+    import re
+    query = re.sub(r"[?.,!]", "", query.lower())
+    words = query.split()
+    normalized_query = " ".join([normalize_topic(w) for w in words])
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon",
         "event horizon telescope", "dark matter", "neutron star", "cosmic microwave background",
@@ -96,13 +107,14 @@ def extract_topic(query):
         "double asteroid redirect test"
     ]
 
+    
     for topic in sorted(known_topics, key=len, reverse=True):
         pattern = r"\b" + re.escape(topic) + r"\b"
-        if re.search(pattern, query):
+        if re.search(pattern, normalized_query):
             return topic
 
     return "space"
-
+    
 def get_wikipedia_summary(topic):
     try:
         topic = topic.replace(" ", "_")
