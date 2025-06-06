@@ -144,7 +144,8 @@ if query:
             final_context = wiki_context + "\n\n" + live_context
 
         prompt = f"""
-You're a cosmic assistant. Use the following context to answer clearly and accurately.
+You are a cosmic assistant that must answer space-related questions *strictly based on the following context*. 
+Only use the facts below. If you cannot find an answer, say "I don't know based on available data."
 
 {final_context}
 
