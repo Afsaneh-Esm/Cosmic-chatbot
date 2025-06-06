@@ -6,13 +6,14 @@ from bs4 import BeautifulSoup
 import feedparser
 import arxiv
 import re
+import numpy as np
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
+from sentence_transformers import SentenceTransformer, util
 
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
-
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -35,6 +36,7 @@ embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
 Settings.embed_model = embed_model
 llm = Groq(model="llama3-70b-8192", api_key=os.environ["GROQ_API_KEY"])
 Settings.llm = llm
+sbert_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # ─────────────── 4. Helper Functions ───────────────
 def get_apod_image():
@@ -72,57 +74,25 @@ def get_next_full_moon():
     except:
         return "Lunar data unavailable."
 
-def extract_topic(query):
-    import re
-
-    def normalize(text):
-        text = text.lower()
-        text = re.sub(r"[?.,!]", "", text)
-        return text
-
-    def lemmatize(word):
-        if word.endswith("ies"):
-            return word[:-3] + "y"
-        elif word.endswith("es"):
-            return word[:-2]
-        elif word.endswith("s") and not word.endswith("ss"):
-            return word[:-1]
-        return word
-
-    query = normalize(query)
-    words = query.split()
-    normalized_query = " ".join([lemmatize(w) for w in words])
-
+def get_topic_embedding_match(query):
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon",
-        "event horizon telescope", "dark matter", "neutron star", "cosmic microwave background",
-        "large magellanic cloud", "small magellanic cloud", "international space station",
-        "james webb space telescope", "hubble space telescope", "alpha centauri", "proxima centauri",
-        "supernova", "galactic center", "gravitational wave", "red giant", "brown dwarf",
-        "star formation", "planetary nebula", "accretion disk", "quasar", "blazar",
-        "pulsar", "x-ray binary", "gamma ray burst", "solar flare", "aurora borealis",
-        "sunspot", "coronal mass ejection", "cosmic ray", "heliosphere", "exoplanet",
-        "hot jupiter", "super-earth", "ice giant", "gas giant", "terrestrial planet",
-        "planet nine", "oort cloud", "kuiper belt", "asteroid belt", "dwarf planet",
-        "pluto", "ceres", "eris", "makemake", "haumea", "uranus", "neptune",
-        "saturn", "jupiter", "mars", "venus", "mercury", "earth", "moon",
-        "apollo program", "voyager 1", "voyager 2", "new horizons", "space shuttle",
-        "spacex", "falcon 9", "starship", "rosetta mission", "kepler mission",
-        "tess mission", "gaia mission", "chandra x-ray observatory", "spitzer space telescope",
-        "soho", "iss", "nasa", "esa", "blue origin", "rocket lab",
-        "starlink", "space debris", "space tourism", "mars rover", "perseverance",
-        "curiosity", "ingenuity", "insight lander", "space weather", "planetary defense",
-        "double asteroid redirect test"
+        "dark matter", "neutron star", "cosmic microwave background", "supernova",
+        "gravitational wave", "red giant", "pulsar", "x-ray binary", "solar flare",
+        "aurora borealis", "exoplanet", "hot jupiter", "super-earth", "ice giant",
+        "terrestrial planet", "planet nine", "oort cloud", "kuiper belt", "asteroid belt",
+        "dwarf planet", "pluto", "mars", "venus", "jupiter", "saturn", "uranus", "neptune",
+        "moon", "earth", "space shuttle", "spacex", "starlink", "mars rover", "perseverance",
+        "curiosity", "space debris", "iss", "apollo program", "voyager 1", "hubble space telescope",
+        "james webb space telescope", "gravitational wave", "black holes"
     ]
 
-    for topic in sorted(known_topics, key=len, reverse=True):
-        topic_words = [lemmatize(w) for w in topic.split()]
-        normalized_topic = " ".join(topic_words)
-        pattern = r"" + re.escape(normalized_topic) + r""
-        if re.search(pattern, normalized_query):
-            return topic
+    query_emb = sbert_model.encode(query, convert_to_tensor=True)
+    topic_embs = sbert_model.encode(known_topics, convert_to_tensor=True)
 
-    return "space"
+    similarities = util.cos_sim(query_emb, topic_embs)[0]
+    top_idx = int(np.argmax(similarities))
+    return known_topics[top_idx]
 
 def get_wikipedia_summary(topic):
     try:
@@ -148,7 +118,7 @@ def get_duckduckgo_summary(topic):
         return ""
 
 def get_fallback_summary(query):
-    topic = extract_topic(query)
+    topic = get_topic_embedding_match(query)
     wiki = get_wikipedia_summary(topic)
     if wiki:
         return wiki
@@ -174,7 +144,6 @@ st.markdown("Type a space-related question (e.g., *When is the next full moon?* 
 
 query = st.text_input("Ask your question about the universe:")
 
-# ───── NASA APOD Section ─────
 st.subheader("📸 NASA Astronomy Picture of the Day")
 title, img_url, desc = get_apod_image()
 if img_url:
@@ -183,20 +152,17 @@ if img_url:
         st.image(img_url, caption=title, use_container_width=True)
     st.markdown(f"<p style='text-align: center;'>{desc}</p>", unsafe_allow_html=True)
 
-# ───── NASA News Section ─────
 st.subheader("📰 Latest NASA News")
 for title, link in get_nasa_news():
     st.markdown(f"- [{title}]({link})")
 
-# ───── Sidebar Live Info ─────
 st.sidebar.header("🔭 Solar & Lunar Updates")
 st.sidebar.markdown(get_solar_activity())
 st.sidebar.markdown(get_next_full_moon())
 
-# ───── Chat Section ─────
 if query:
     with st.spinner("🔄 Retrieving answer from the cosmos..."):
-        topic = extract_topic(query)
+        topic = get_topic_embedding_match(query)
         wiki_context = get_fallback_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
 
@@ -212,7 +178,7 @@ if query:
 
         prompt = f"""
 You are a cosmic assistant that must answer space-related questions clearly and accurately based only on the following context.
-If the context does not contain the answer, say \"I don't know based on available data.\"
+If the context does not contain the answer, say \"I don't know based on available data.\".
 
 Context:
 {final_context}
@@ -235,3 +201,4 @@ Answer:
         st.markdown(response.text)
 else:
     st.info("Enter a question about the cosmos to begin your journey! 🚀")
+
