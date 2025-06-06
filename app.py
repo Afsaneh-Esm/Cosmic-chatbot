@@ -41,7 +41,6 @@ Settings.llm = llm
 sbert_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # ─────────────── 4. Helper Functions ───────────────
-
 def get_apod_image():
     try:
         res = requests.get(f"https://api.nasa.gov/planetary/apod?api_key={NASA_API_KEY}")
@@ -114,21 +113,12 @@ def get_duckduckgo_summary(topic):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            abstract = data.get("Abstract")
-            return abstract if abstract else ""
+            return data.get("Abstract", "")
         return ""
     except:
         return ""
 
-def get_fallback_summary(query):
-    topic = get_topic_embedding_match(query)
-    wiki, image, link = get_wikipedia_summary(topic)
-    if wiki:
-        return wiki, image, link
-    duck = get_duckduckgo_summary(topic)
-    return duck, "", ""
-
-def search_arxiv(query, max_results=10):
+def search_arxiv(query, max_results=5):
     try:
         search = arxiv.Search(
             query=query,
@@ -142,9 +132,9 @@ def search_arxiv(query, max_results=10):
 def plot_cmb_example():
     x = np.linspace(0.1, 10, 100)
     y = 1 / (x ** 2)
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4, 2))
     ax.plot(x, y)
-    ax.set_title("Sample CMB-like Radiation Curve")
+    ax.set_title("CMB Intensity Curve")
     ax.set_xlabel("Wavelength")
     ax.set_ylabel("Intensity")
     st.pyplot(fig)
@@ -160,8 +150,8 @@ title, img_url, desc = get_apod_image()
 if img_url:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image(img_url, caption=title, use_container_width=True)
-    st.markdown(f"<p style='text-align: center;'>{desc}</p>", unsafe_allow_html=True)
+        st.image(img_url, caption=title, use_column_width=True)
+    st.markdown(f"<p style='text-align: center; font-size: 14px;'>{desc}</p>", unsafe_allow_html=True)
 
 st.subheader("📰 Latest NASA News")
 for title, link in get_nasa_news():
@@ -177,15 +167,13 @@ if query:
         wiki_context, image_url, page_url = get_wikipedia_summary(topic)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
 
-        if wiki_context:
-            final_context = wiki_context + "\n\n" + live_context
-        else:
-            arxiv_texts = search_arxiv(query)
-            docs = [Document(text=t) for t in arxiv_texts]
-            index = VectorStoreIndex.from_documents(docs)
-            nodes = index.as_retriever().retrieve(query)
-            arxiv_context = "\n\n".join([n.get_content()[:500] for n in nodes])
-            final_context = live_context + "\n\n" + arxiv_context
+        arxiv_texts = search_arxiv(query)
+        docs = [Document(text=t) for t in arxiv_texts]
+        index = VectorStoreIndex.from_documents(docs)
+        nodes = index.as_retriever().retrieve(query)
+        arxiv_context = "\n\n".join([n.get_content()[:500] for n in nodes])
+
+        final_context = wiki_context + "\n\n" + arxiv_context + "\n\n" + live_context
 
         prompt = f"""
 You are a helpful and knowledgeable cosmic assistant that answers space-related questions clearly, accurately, and in an educational tone suitable for curious learners.
@@ -218,7 +206,7 @@ Answer:
         st.markdown(response.text)
 
         if image_url:
-            st.image(image_url, caption=f"Wikipedia image for {topic}", use_container_width=True)
+            st.image(image_url, caption=f"Wikipedia image for {topic}", width=300)
 
         if page_url:
             st.markdown(f"[🔗 Read more on Wikipedia]({page_url})")
