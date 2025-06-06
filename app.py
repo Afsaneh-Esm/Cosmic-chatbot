@@ -71,9 +71,7 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
-
 def extract_topic(query):
-    import re
     query = re.sub(r"[?.,!]", "", query.lower())
 
     known_topics = [
@@ -98,7 +96,6 @@ def extract_topic(query):
         "double asteroid redirect test"
     ]
 
-
     for topic in sorted(known_topics, key=len, reverse=True):
         pattern = r"\b" + re.escape(topic) + r"\b"
         if re.search(pattern, query):
@@ -106,10 +103,6 @@ def extract_topic(query):
 
     return "space"
 
-    words = re.findall(r"[a-z]{3,}", query)
-    return words[-1] if words else "space"
-
-    
 def get_wikipedia_summary(topic):
     try:
         topic = topic.replace(" ", "_")
@@ -221,4 +214,3 @@ Answer:
         st.markdown(response.text)
 else:
     st.info("Enter a question about the cosmos to begin your journey! 🚀")
-
