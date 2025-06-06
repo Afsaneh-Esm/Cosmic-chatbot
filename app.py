@@ -127,7 +127,7 @@ if query:
         context = "\n\n".join([n.get_content()[:500] for n in nodes])
         wiki_context = get_wikipedia_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
-        final_context = wiki_context + "\n\n" + live_context + "\n\n" + arxiv_context
+        final_context = wiki_context + "\n\n" + live_context + "\n\n" + context
 
         prompt = f"""
 You're a cosmic assistant. Use the following context to answer clearly and accurately.
