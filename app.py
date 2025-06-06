@@ -69,10 +69,16 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
-
+        
 def get_wikipedia_summary(query):
     try:
-        topic = query.replace(" ", "_")
+        # فقط مهم‌ترین کلمه‌ها رو نگه داریم (اختیاری: استفاده از keyword extraction)
+        keywords = query.split()
+        if len(keywords) > 3:
+            topic = keywords[-2] + " " + keywords[-1]  # e.g. "Jupiter composition"
+        else:
+            topic = query
+        topic = topic.replace("’", "").replace("'", "").replace(" ", "_")  # برای url-safe کردن
         url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
         response = requests.get(url)
         if response.status_code == 200:
