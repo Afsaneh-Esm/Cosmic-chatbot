@@ -80,20 +80,21 @@ def normalize_topic(word):
         return word[:-1]
     return word
 
-def normalize_topic(word):
-    if word.endswith("ies"):
-        return word[:-3] + "y"
-    elif word.endswith("es"):
-        return word[:-2]
-    elif word.endswith("s") and not word.endswith("ss"):
-        return word[:-1]
-    return word
-
 def extract_topic(query):
     import re
-    query = re.sub(r"[?.,!]", "", query.lower())
-    words = query.split()
-    normalized_query = " ".join([normalize_topic(w) for w in words])
+
+    def normalize(text):
+        text = text.lower()
+        text = re.sub(r"[?.,!]", "", text)
+        if text.endswith("ies"):
+            return text[:-3] + "y"
+        elif text.endswith("es"):
+            return text[:-2]
+        elif text.endswith("s") and not text.endswith("ss"):
+            return text[:-1]
+        return text
+
+    query = normalize(query)
 
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon",
@@ -116,10 +117,10 @@ def extract_topic(query):
         "curiosity", "ingenuity", "insight lander", "space weather", "planetary defense",
         "double asteroid redirect test"
     ]
-
+    
     for topic in sorted(known_topics, key=len, reverse=True):
-        pattern = r"" + re.escape(topic) + r""
-        if re.search(pattern, normalized_query):
+        pattern = r"\b" + re.escape(normalize(topic)) + r"\b"
+        if re.search(pattern, query):
             return topic
 
     return "space"
