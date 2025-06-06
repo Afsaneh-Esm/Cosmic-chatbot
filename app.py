@@ -78,7 +78,7 @@ def get_wikipedia_summary(query):
         topic = topic_candidates[-1] if topic_candidates else "Jupiter"  # مقدار پیش‌فرض
 
         topic = topic.replace("’", "").replace("'", "").replace(" ", "_")
-        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
+        url = f"https://en.wikipedia.org/api/rest_v1/page/mobile-sections/{topic}"
         response = requests.get(url)
 
         print("🔍 Wikipedia topic used:", topic)
@@ -86,7 +86,7 @@ def get_wikipedia_summary(query):
 
         if response.status_code == 200:
             data = response.json()
-            return data.get("extract", "No summary found.")
+            return data["lead"]["sections"][0]["text"]
         return "No Wikipedia summary available."
     except Exception as e:
         return f"Wikipedia fetch failed: {e}"
