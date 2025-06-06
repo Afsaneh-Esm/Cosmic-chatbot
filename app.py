@@ -5,12 +5,14 @@ import requests
 from bs4 import BeautifulSoup
 import feedparser
 import arxiv
+import re
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
 
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
+
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -26,8 +28,8 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # ─────────────── 3. API Keys and LLM ───────────────
-os.environ["GROQ_API_KEY"] = "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"
-NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
+os.environ["GROQ_API_KEY"] = "your_groq_api_key"
+NASA_API_KEY = "your_nasa_api_key"
 
 embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
 Settings.embed_model = embed_model
@@ -69,35 +71,38 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
-        
-def get_wikipedia_summary(query):
-    try:
-        import re
-        # استخراج فقط اسم علمی یا جسم نجومی از سؤال (مثلاً Jupiter)
-        topic_candidates = re.findall(r"\b[A-Z][a-zA-Z]{2,}\b", query)
-        topic = topic_candidates[-1] if topic_candidates else "Jupiter"  # مقدار پیش‌فرض
 
-        topic = topic.replace("’", "").replace("'", "").replace(" ", "_")
+def get_wikipedia_summary(query):
+    fallback_summaries = {
+        "jupiter": "Jupiter is primarily composed of hydrogen (~90%) and helium (~10%), with trace amounts of methane, ammonia, water vapor, and other compounds.",
+        "saturn": "Saturn is a gas giant composed mostly of hydrogen and helium, with a dense core of rock and metal.",
+        "mars": "Mars is a terrestrial planet with a thin atmosphere, primarily composed of carbon dioxide, and has surface features reminiscent of both the Moon and Earth.",
+        "venus": "Venus has a thick atmosphere composed mostly of carbon dioxide with clouds of sulfuric acid, making it the hottest planet in the Solar System.",
+    }
+    try:
+        topic_candidates = re.findall(r"\b[A-Z][a-zA-Z']{2,}\b", query)
+        topic = topic_candidates[-1].lower() if topic_candidates else "jupiter"
         url = f"https://en.wikipedia.org/api/rest_v1/page/mobile-sections/{topic}"
         response = requests.get(url)
-
-        print("🔍 Wikipedia topic used:", topic)
-        print("🔗 Wikipedia URL:", url)
-
         if response.status_code == 200:
             data = response.json()
-            return data["lead"]["sections"][0]["text"]
-        return "No Wikipedia summary available."
-    except Exception as e:
-        return f"Wikipedia fetch failed: {e}"
+            text = data["lead"]["sections"][0]["text"]
+            clean_text = re.sub(r'<[^>]*>', '', text)
+            return clean_text.strip()
+        return fallback_summaries.get(topic, "No Wikipedia summary available.")
+    except:
+        return "Wikipedia fetch failed."
 
 def search_arxiv(query, max_results=10):
-    search = arxiv.Search(
-        query=query,
-        max_results=max_results,
-        sort_by=arxiv.SortCriterion.Relevance,
-        sort_order=arxiv.SortOrder.Descending)
-    return [f"{res.title}\n\n{res.summary}" for res in search.results()]
+    try:
+        search = arxiv.Search(
+            query=query,
+            max_results=max_results,
+            sort_by=arxiv.SortCriterion.Relevance,
+            sort_order=arxiv.SortOrder.Descending)
+        return [f"{res.title}\n\n{res.summary}" for res in search.results()]
+    except:
+        return []
 
 # ─────────────── 5. Streamlit App ───────────────
 st.title("🌌 Ask the Cosmos")
@@ -126,41 +131,40 @@ st.sidebar.markdown(get_next_full_moon())
 
 # ───── Chat Section ─────
 if query:
-    with st.spinner("🔄 Searching arXiv and preparing context..."):
-        arxiv_texts = search_arxiv(query)
-        docs = [Document(text=t) for t in arxiv_texts]
-
-        index = VectorStoreIndex.from_documents(docs)
-        nodes = index.as_retriever().retrieve(query)
-        context = "\n\n".join([n.get_content()[:500] for n in nodes])
-
-       # Check if the context is relevant at all
-        is_context_relevant = any(keyword.lower() in context.lower() for keyword in query.lower().split())
-
+    with st.spinner("🔄 Retrieving answer from the cosmos..."):
         wiki_context = get_wikipedia_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
 
-      # Use context only if it is useful
-        if is_context_relevant and len(context.strip()) > 100:
-            final_context = wiki_context + "\n\n" + live_context + "\n\n" + context
-        else:
+        if wiki_context and "No Wikipedia" not in wiki_context:
             final_context = wiki_context + "\n\n" + live_context
-        st.subheader("🧠 Wikipedia Summary Used:")
-        st.code(wiki_context, language="markdown")
+        else:
+            arxiv_texts = search_arxiv(query)
+            docs = [Document(text=t) for t in arxiv_texts]
+            index = VectorStoreIndex.from_documents(docs)
+            nodes = index.as_retriever().retrieve(query)
+            arxiv_context = "\n\n".join([n.get_content()[:500] for n in nodes])
+            final_context = wiki_context + "\n\n" + live_context + "\n\n" + arxiv_context
 
-        st.subheader("📦 Final Context Sent to LLM:")
-        st.code(final_context[:2000], language="markdown")
         prompt = f"""
-You are a cosmic assistant that must answer space-related questions *strictly based on the following context*. 
-Only use the facts below. If you cannot find an answer, say "I don't know based on available data."
+You are a cosmic assistant that must answer space-related questions clearly and accurately based only on the following context.
+If the context does not contain the answer, say "I don't know based on available data."
 
+Context:
 {final_context}
 
-Q: {query}
-A:"""
-
+Question: {query}
+Answer:
+"""
         response = llm.complete(prompt=prompt)
+
+        st.subheader("🔊 Wikipedia Summary Used:")
+        st.code(wiki_context, language="markdown")
+
+        st.subheader("🛋️ Final Context Sent to LLM:")
+        st.code(final_context[:2000], language="markdown")
+
         st.subheader("💬 Cosmic Answer")
         st.markdown(response.text)
 else:
     st.info("Enter a question about the cosmos to begin your journey! 🚀")
+
