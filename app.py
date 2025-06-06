@@ -11,7 +11,6 @@ from llama_index.llms.groq import Groq
 
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
-
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
@@ -36,7 +35,6 @@ llm = Groq(model="llama3-70b-8192", api_key=os.environ["GROQ_API_KEY"])
 Settings.llm = llm
 
 # ─────────────── 4. Helper Functions ───────────────
-
 def get_apod_image():
     try:
         res = requests.get(f"https://api.nasa.gov/planetary/apod?api_key={NASA_API_KEY}")
@@ -71,6 +69,7 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
+
 def get_wikipedia_summary(query):
     try:
         topic = query.replace(" ", "_")
@@ -84,14 +83,14 @@ def get_wikipedia_summary(query):
         return "Wikipedia fetch failed."
 
 def search_arxiv(query, max_results=10):
-    search = arxiv.Search(query=query,
+    search = arxiv.Search(
+        query=query,
         max_results=max_results,
         sort_by=arxiv.SortCriterion.Relevance,
         sort_order=arxiv.SortOrder.Descending)
     return [f"{res.title}\n\n{res.summary}" for res in search.results()]
 
 # ─────────────── 5. Streamlit App ───────────────
-
 st.title("🌌 Ask the Cosmos")
 st.markdown("Type a space-related question (e.g., *When is the next full moon?* or *What is Jupiter?*)")
 
@@ -125,9 +124,18 @@ if query:
         index = VectorStoreIndex.from_documents(docs)
         nodes = index.as_retriever().retrieve(query)
         context = "\n\n".join([n.get_content()[:500] for n in nodes])
+
+       # Check if the context is relevant at all
+        is_context_relevant = any(keyword.lower() in context.lower() for keyword in query.lower().split())
+
         wiki_context = get_wikipedia_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
-        final_context = wiki_context + "\n\n" + live_context + "\n\n" + context
+
+      # Use context only if it is useful
+        if is_context_relevant and len(context.strip()) > 100:
+            final_context = wiki_context + "\n\n" + live_context + "\n\n" + context
+        else:
+            final_context = wiki_context + "\n\n" + live_context
 
         prompt = f"""
 You're a cosmic assistant. Use the following context to answer clearly and accurately.
