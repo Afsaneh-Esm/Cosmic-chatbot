@@ -142,7 +142,11 @@ if query:
             final_context = wiki_context + "\n\n" + live_context + "\n\n" + context
         else:
             final_context = wiki_context + "\n\n" + live_context
+        st.subheader("🧠 Wikipedia Summary Used:")
+        st.code(wiki_context, language="markdown")
 
+        st.subheader("📦 Final Context Sent to LLM:")
+        st.code(final_context[:2000], language="markdown")
         prompt = f"""
 You are a cosmic assistant that must answer space-related questions *strictly based on the following context*. 
 Only use the facts below. If you cannot find an answer, say "I don't know based on available data."
