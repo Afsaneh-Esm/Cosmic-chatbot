@@ -73,7 +73,9 @@ def get_next_full_moon():
         return "Lunar data unavailable."
 
 def extract_topic(query):
+    import re
     query = re.sub(r"[?.,!]", "", query.lower())
+
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon",
         "event horizon telescope", "dark matter", "neutron star", "cosmic microwave background",
@@ -88,20 +90,23 @@ def extract_topic(query):
         "pluto", "ceres", "eris", "makemake", "haumea", "uranus", "neptune",
         "saturn", "jupiter", "mars", "venus", "mercury", "earth", "moon",
         "apollo program", "voyager 1", "voyager 2", "new horizons", "space shuttle",
-        "space x", "falcon 9", "starship", "rosetta mission", "kepler mission",
+        "spacex", "falcon 9", "starship", "rosetta mission", "kepler mission",
         "tess mission", "gaia mission", "chandra x-ray observatory", "spitzer space telescope",
-        "soho", "iss", "nasa", "esa", "spacex", "blue origin", "rocket lab",
+        "soho", "iss", "nasa", "esa", "blue origin", "rocket lab",
         "starlink", "space debris", "space tourism", "mars rover", "perseverance",
         "curiosity", "ingenuity", "insight lander", "space weather", "planetary defense",
         "double asteroid redirect test"
     ]
-   for topic in sorted(known_topics, key=len, reverse=True):
+
+    for topic in sorted(known_topics, key=len, reverse=True):
         pattern = r"\\b" + re.escape(topic) + r"\\b"
         if re.search(pattern, query):
             return topic
+
     words = re.findall(r"[a-z]{3,}", query)
     return words[-1] if words else "space"
 
+    
 def get_wikipedia_summary(topic):
     try:
         topic = topic.replace(" ", "_")
