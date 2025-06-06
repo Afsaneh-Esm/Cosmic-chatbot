@@ -72,21 +72,24 @@ def get_next_full_moon():
         
 def get_wikipedia_summary(query):
     try:
-        # فقط مهم‌ترین کلمه‌ها رو نگه داریم (اختیاری: استفاده از keyword extraction)
-        keywords = query.split()
-        if len(keywords) > 3:
-            topic = keywords[-2] + " " + keywords[-1]  # e.g. "Jupiter composition"
-        else:
-            topic = query
-        topic = topic.replace("’", "").replace("'", "").replace(" ", "_")  # برای url-safe کردن
+        import re
+        # استخراج فقط اسم علمی یا جسم نجومی از سؤال (مثلاً Jupiter)
+        topic_candidates = re.findall(r"\b[A-Z][a-zA-Z]{2,}\b", query)
+        topic = topic_candidates[-1] if topic_candidates else "Jupiter"  # مقدار پیش‌فرض
+
+        topic = topic.replace("’", "").replace("'", "").replace(" ", "_")
         url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
         response = requests.get(url)
+
+        print("🔍 Wikipedia topic used:", topic)
+        print("🔗 Wikipedia URL:", url)
+
         if response.status_code == 200:
             data = response.json()
             return data.get("extract", "No summary found.")
         return "No Wikipedia summary available."
-    except:
-        return "Wikipedia fetch failed."
+    except Exception as e:
+        return f"Wikipedia fetch failed: {e}"
 
 def search_arxiv(query, max_results=10):
     search = arxiv.Search(
