@@ -100,7 +100,7 @@ def extract_topic(query):
 
 
     for topic in sorted(known_topics, key=len, reverse=True):
-        pattern = r"\\b" + re.escape(topic) + r"\\b"
+        pattern = r"\b" + re.escape(topic) + r"\b"
         if re.search(pattern, query):
             return topic
 
