@@ -73,7 +73,7 @@ def get_next_full_moon():
         return "Lunar data unavailable."
 
 def extract_topic(query):
-    query = query.lower()
+    query = re.sub(r"[?.,!]", "", query.lower())
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon",
         "event horizon telescope", "dark matter", "neutron star", "cosmic microwave background",
@@ -95,8 +95,9 @@ def extract_topic(query):
         "curiosity", "ingenuity", "insight lander", "space weather", "planetary defense",
         "double asteroid redirect test"
     ]
-    for topic in sorted(known_topics, key=len, reverse=True):
-        if topic in query:
+   for topic in sorted(known_topics, key=len, reverse=True):
+        pattern = r"\\b" + re.escape(topic) + r"\\b"
+        if re.search(pattern, query):
             return topic
     words = re.findall(r"[a-z]{3,}", query)
     return words[-1] if words else "space"
