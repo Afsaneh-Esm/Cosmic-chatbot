@@ -7,11 +7,12 @@ import feedparser
 import arxiv
 import re
 import numpy as np
+import matplotlib.pyplot as plt
+import ephem
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
-import ephem
 
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
@@ -40,6 +41,7 @@ Settings.llm = llm
 sbert_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # ─────────────── 4. Helper Functions ───────────────
+
 def get_apod_image():
     try:
         res = requests.get(f"https://api.nasa.gov/planetary/apod?api_key={NASA_API_KEY}")
@@ -66,14 +68,12 @@ def get_solar_activity():
     except:
         return "No solar activity data."
 
-
 def get_next_full_moon():
     try:
         next_full = ephem.next_full_moon(ephem.now())
         return f"🌕 Next full moon: {next_full.datetime().strftime('%Y-%m-%d %H:%M UTC')}"
     except Exception as e:
         return f"Lunar data unavailable: {e}"
-
 
 def get_topic_embedding_match(query):
     known_topics = [
@@ -85,12 +85,10 @@ def get_topic_embedding_match(query):
         "dwarf planet", "pluto", "mars", "venus", "jupiter", "saturn", "uranus", "neptune",
         "moon", "earth", "space shuttle", "spacex", "starlink", "mars rover", "perseverance",
         "curiosity", "space debris", "iss", "apollo program", "voyager 1", "hubble space telescope",
-        "james webb space telescope", "gravitational wave", "black holes"
+        "james webb space telescope", "black holes"
     ]
-
     query_emb = sbert_model.encode(query, convert_to_tensor=True)
     topic_embs = sbert_model.encode(known_topics, convert_to_tensor=True)
-
     similarities = util.cos_sim(query_emb, topic_embs)[0]
     top_idx = int(np.argmax(similarities))
     return known_topics[top_idx]
@@ -101,10 +99,14 @@ def get_wikipedia_summary(topic):
         url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
         response = requests.get(url)
         if response.status_code == 200:
-            return response.json().get("extract", "")
-        return ""
+            data = response.json()
+            summary = data.get("extract", "")
+            image_url = data.get("thumbnail", {}).get("source", "")
+            page_url = data.get("content_urls", {}).get("desktop", {}).get("page", "")
+            return summary, image_url, page_url
+        return "", "", ""
     except:
-        return ""
+        return "", "", ""
 
 def get_duckduckgo_summary(topic):
     try:
@@ -120,13 +122,11 @@ def get_duckduckgo_summary(topic):
 
 def get_fallback_summary(query):
     topic = get_topic_embedding_match(query)
-    wiki = get_wikipedia_summary(topic)
+    wiki, image, link = get_wikipedia_summary(topic)
     if wiki:
-        return wiki
+        return wiki, image, link
     duck = get_duckduckgo_summary(topic)
-    if duck:
-        return duck
-    return "No fallback summary available."
+    return duck, "", ""
 
 def search_arxiv(query, max_results=10):
     try:
@@ -138,6 +138,16 @@ def search_arxiv(query, max_results=10):
         return [f"{res.title}\n\n{res.summary}" for res in search.results()]
     except:
         return []
+
+def plot_cmb_example():
+    x = np.linspace(0.1, 10, 100)
+    y = 1 / (x ** 2)
+    fig, ax = plt.subplots()
+    ax.plot(x, y)
+    ax.set_title("Sample CMB-like Radiation Curve")
+    ax.set_xlabel("Wavelength")
+    ax.set_ylabel("Intensity")
+    st.pyplot(fig)
 
 # ─────────────── 5. Streamlit App ───────────────
 st.title("🌌 Ask the Cosmos")
@@ -164,7 +174,7 @@ st.sidebar.markdown(get_next_full_moon())
 if query:
     with st.spinner("🔄 Retrieving answer from the cosmos..."):
         topic = get_topic_embedding_match(query)
-        wiki_context = get_fallback_summary(query)
+        wiki_context, image_url, page_url = get_wikipedia_summary(topic)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
 
         if wiki_context:
@@ -184,27 +194,5 @@ Use only the information provided in the context below. Do not make up facts or 
 
 If the topic is a well-known scientific concept (e.g. black holes, dark matter, cosmic microwave background), expand the explanation slightly beyond the raw definition to include historical context, scientific significance, or how it's observed.
 
-Respond in a way that balances scientific accuracy and accessibility — make it understandable for non-experts without oversimplifying key facts.
-
-Context:
-{final_context}
-
-Question: {query}
-Answer:
-"""
-        response = llm.complete(prompt=prompt)
-
-        st.subheader("🔊 Topic Extracted:")
-        st.code(topic)
-
-        st.subheader("🔊 Wikipedia or DuckDuckGo Summary Used:")
-        st.code(wiki_context, language="markdown")
-
-        st.subheader("🛋️ Final Context Sent to LLM:")
-        st.code(final_context[:2000], language="markdown")
-
-        st.subheader("💬 Cosmic Answer")
-        st.markdown(response.text)
-else:
-    st.info("Enter a question about the cosmos to begin your journey! 🚀")
+Respond in a way that balances scientific accuracy and accessibility
 
