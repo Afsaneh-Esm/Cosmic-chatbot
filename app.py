@@ -98,10 +98,13 @@ def extract_topic(query):
         "double asteroid redirect test"
     ]
 
+
     for topic in sorted(known_topics, key=len, reverse=True):
         pattern = r"\\b" + re.escape(topic) + r"\\b"
         if re.search(pattern, query):
             return topic
+
+    return "space"
 
     words = re.findall(r"[a-z]{3,}", query)
     return words[-1] if words else "space"
