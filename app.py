@@ -101,7 +101,6 @@ def extract_topic(query):
     words = re.findall(r"[a-z]{3,}", query)
     return words[-1] if words else "space"
 
-
 def get_wikipedia_summary(topic):
     try:
         topic = topic.replace(" ", "_")
