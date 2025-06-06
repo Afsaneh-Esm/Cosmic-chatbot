@@ -69,8 +69,10 @@ def get_next_full_moon():
     try:
         res = requests.get("https://www.timeanddate.com/moon/phases/")
         soup = BeautifulSoup(res.text, "html.parser")
-        row = soup.find("table", class_="tb-sm").find_all("tr")[1]
-        return "🌕 Next full moon: " + row.get_text(" ", strip=True)
+        rows = soup.find("table", class_="tb-sm").find_all("tr")
+        for row in rows:
+            if "Full Moon" in row.text:
+                return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
 
