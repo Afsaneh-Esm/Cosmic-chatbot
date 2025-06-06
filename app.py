@@ -28,8 +28,8 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # ─────────────── 3. API Keys and LLM ───────────────
-os.environ["GROQ_API_KEY"] = "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"
-NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
+os.environ["GROQ_API_KEY"] = "your_groq_api_key"
+NASA_API_KEY = "your_nasa_api_key"
 
 embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
 Settings.embed_model = embed_model
@@ -82,13 +82,11 @@ def get_wikipedia_summary(query):
     try:
         topic_candidates = re.findall(r"\b[A-Z][a-zA-Z']{2,}\b", query)
         topic = topic_candidates[-1].lower() if topic_candidates else "jupiter"
-        url = f"https://en.wikipedia.org/api/rest_v1/page/mobile-sections/{topic}"
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            text = data["lead"]["sections"][0]["text"]
-            clean_text = re.sub(r'<[^>]*>', '', text)
-            return clean_text.strip()
+            return data.get("extract", fallback_summaries.get(topic, "No Wikipedia summary available."))
         return fallback_summaries.get(topic, "No Wikipedia summary available.")
     except:
         return "Wikipedia fetch failed."
@@ -145,9 +143,14 @@ if query:
             arxiv_context = "\n\n".join([n.get_content()[:500] for n in nodes])
             final_context = wiki_context + "\n\n" + live_context + "\n\n" + arxiv_context
 
+        # Add manual fallback for known compositions
+        if "jupiter" in query.lower() and "composition" in query.lower():
+            fallback_info = "Jupiter is composed mostly of hydrogen (~90%) and helium (~10%), with small amounts of methane, ammonia, and water vapor."
+            final_context += "\n\n" + fallback_info
+
         prompt = f"""
 You are a cosmic assistant that must answer space-related questions clearly and accurately based only on the following context.
-If the context does not contain the answer, say "I don't know based on available data."
+If the context does not contain the answer, say \"I don't know based on available data.\"
 
 Context:
 {final_context}
