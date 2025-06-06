@@ -77,8 +77,7 @@ def get_next_full_moon():
         return "Full moon data not found."
     except:
         return "Lunar data unavailable."
-    except:
-        return "Lunar data unavailable."
+
 
 def get_topic_embedding_match(query):
     known_topics = [
