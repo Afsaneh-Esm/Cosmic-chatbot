@@ -167,8 +167,8 @@ title, img_url, desc = get_apod_image()
 if img_url:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-    st.image(img_url, caption=title, use_container_width=True)
-    st.markdown(f"<p style='text-align: center; font-size: 14px;'>{desc}</p>", unsafe_allow_html=True)
+     st.image(img_url, caption=title, use_container_width=True)
+     st.markdown(f"<p style='text-align: center; font-size: 14px;'>{desc}</p>", unsafe_allow_html=True)
 
 st.subheader("📰 Latest NASA News")
 for title, link in get_nasa_news():
