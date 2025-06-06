@@ -76,7 +76,7 @@ def get_next_full_moon():
 
 def get_topic_embedding_match(query):
     known_topics = [
-        "black hole", "white dwarf", "milky way", "solar system", "event horizon", "solar eclipse"
+        "black hole", "white dwarf", "milky way", "solar system", "event horizon",
         "dark matter", "neutron star", "cosmic microwave background", "supernova",
         "gravitational wave", "red giant", "pulsar", "x-ray binary", "solar flare",
         "aurora borealis", "exoplanet", "hot jupiter", "super-earth", "ice giant",
@@ -84,13 +84,30 @@ def get_topic_embedding_match(query):
         "dwarf planet", "pluto", "mars", "venus", "jupiter", "saturn", "uranus", "neptune",
         "moon", "earth", "space shuttle", "spacex", "starlink", "mars rover", "perseverance",
         "curiosity", "space debris", "iss", "apollo program", "voyager 1", "hubble space telescope",
-        "james webb space telescope", "black holes"
+        "james webb space telescope", "solar eclipse", "lunar eclipse", "solar neutrino"
     ]
-    query_emb = sbert_model.encode(query, convert_to_tensor=True)
-    topic_embs = sbert_model.encode(known_topics, convert_to_tensor=True)
-    similarities = util.cos_sim(query_emb, topic_embs)[0]
-    top_idx = int(np.argmax(similarities))
-    return known_topics[top_idx]
+# Splitting the question based on common words
+    parts = re.split(r"[,.;:!?&]| and | or ", query.lower())
+
+    best_topic = None
+    best_score = -1
+
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        query_emb = sbert_model.encode(part, convert_to_tensor=True)
+        topic_embs = sbert_model.encode(known_topics, convert_to_tensor=True)
+        similarities = util.cos_sim(query_emb, topic_embs)[0]
+        top_idx = int(np.argmax(similarities))
+        score = float(similarities[top_idx])
+
+        if score > best_score:
+            best_score = score
+            best_topic = known_topics[top_idx]
+
+    return best_topic
+
 
 def get_wikipedia_summary(topic):
     try:
