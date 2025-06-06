@@ -73,19 +73,45 @@ def get_next_full_moon():
         return "Lunar data unavailable."
 
 def extract_topic(query):
-    keywords = re.findall(r"\b[a-zA-Z]{3,}(?:\s[a-zA-Z]{3,})?\b", query)
-    return keywords[-1] if keywords else "space"
+    query = query.lower()
+    known_topics = [
+        "black hole", "white dwarf", "milky way", "solar system", "event horizon",
+        "event horizon telescope", "dark matter", "neutron star", "cosmic microwave background",
+        "large magellanic cloud", "small magellanic cloud", "international space station",
+        "james webb space telescope", "hubble space telescope", "alpha centauri", "proxima centauri",
+        "supernova", "galactic center", "gravitational wave", "red giant", "brown dwarf",
+        "star formation", "planetary nebula", "accretion disk", "quasar", "blazar",
+        "pulsar", "x-ray binary", "gamma ray burst", "solar flare", "aurora borealis",
+        "sunspot", "coronal mass ejection", "cosmic ray", "heliosphere", "exoplanet",
+        "hot jupiter", "super-earth", "ice giant", "gas giant", "terrestrial planet",
+        "planet nine", "oort cloud", "kuiper belt", "asteroid belt", "dwarf planet",
+        "pluto", "ceres", "eris", "makemake", "haumea", "uranus", "neptune",
+        "saturn", "jupiter", "mars", "venus", "mercury", "earth", "moon",
+        "apollo program", "voyager 1", "voyager 2", "new horizons", "space shuttle",
+        "space x", "falcon 9", "starship", "rosetta mission", "kepler mission",
+        "tess mission", "gaia mission", "chandra x-ray observatory", "spitzer space telescope",
+        "soho", "iss", "nasa", "esa", "spacex", "blue origin", "rocket lab",
+        "starlink", "space debris", "space tourism", "mars rover", "perseverance",
+        "curiosity", "ingenuity", "insight lander", "space weather", "planetary defense",
+        "double asteroid redirect test"
+    ]
+    for topic in sorted(known_topics, key=len, reverse=True):
+        if topic in query:
+            return topic
+    words = re.findall(r"[a-z]{3,}", query)
+    return words[-1] if words else "space"
 
-def get_wikipedia_fallback(topic):
+
+def get_wikipedia_summary(topic):
     try:
         topic = topic.replace(" ", "_")
         url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
         response = requests.get(url)
         if response.status_code == 200:
-            return response.json().get("extract", "No fallback available.")
-        return "No fallback available."
+            return response.json().get("extract", "")
+        return ""
     except:
-        return "Wikipedia fallback error."
+        return ""
 
 def get_duckduckgo_summary(topic):
     try:
@@ -94,18 +120,18 @@ def get_duckduckgo_summary(topic):
         if response.status_code == 200:
             data = response.json()
             abstract = data.get("Abstract")
-            return abstract if abstract else "No fallback info found."
-        return "DuckDuckGo fallback failed."
+            return abstract if abstract else ""
+        return ""
     except:
-        return "DuckDuckGo fallback error."
+        return ""
 
 def get_fallback_summary(query):
     topic = extract_topic(query)
-    wiki = get_wikipedia_fallback(topic)
-    if wiki and "No fallback" not in wiki:
+    wiki = get_wikipedia_summary(topic)
+    if wiki:
         return wiki
     duck = get_duckduckgo_summary(topic)
-    if duck and "No fallback" not in duck:
+    if duck:
         return duck
     return "No fallback summary available."
 
@@ -148,10 +174,11 @@ st.sidebar.markdown(get_next_full_moon())
 # ───── Chat Section ─────
 if query:
     with st.spinner("🔄 Retrieving answer from the cosmos..."):
+        topic = extract_topic(query)
         wiki_context = get_fallback_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
 
-        if wiki_context and "No fallback" not in wiki_context:
+        if wiki_context:
             final_context = wiki_context + "\n\n" + live_context
         else:
             arxiv_texts = search_arxiv(query)
@@ -159,11 +186,7 @@ if query:
             index = VectorStoreIndex.from_documents(docs)
             nodes = index.as_retriever().retrieve(query)
             arxiv_context = "\n\n".join([n.get_content()[:500] for n in nodes])
-            final_context = wiki_context + "\n\n" + live_context + "\n\n" + arxiv_context
-
-        if "jupiter" in query.lower() and "composition" in query.lower():
-            fallback_info = "Jupiter is composed mostly of hydrogen (~90%) and helium (~10%), with small amounts of methane, ammonia, and water vapor."
-            final_context += "\n\n" + fallback_info
+            final_context = live_context + "\n\n" + arxiv_context
 
         prompt = f"""
 You are a cosmic assistant that must answer space-related questions clearly and accurately based only on the following context.
@@ -177,7 +200,10 @@ Answer:
 """
         response = llm.complete(prompt=prompt)
 
-        st.subheader("🔊 Wikipedia Summary Used:")
+        st.subheader("🔊 Topic Extracted:")
+        st.code(topic)
+
+        st.subheader("🔊 Wikipedia or DuckDuckGo Summary Used:")
         st.code(wiki_context, language="markdown")
 
         st.subheader("🛋️ Final Context Sent to LLM:")
@@ -187,3 +213,4 @@ Answer:
         st.markdown(response.text)
 else:
     st.info("Enter a question about the cosmos to begin your journey! 🚀")
+
