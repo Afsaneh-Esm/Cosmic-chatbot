@@ -28,8 +28,8 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 # ─────────────── 3. API Keys and LLM ───────────────
-os.environ["GROQ_API_KEY"] = "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"
-NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
+os.environ["GROQ_API_KEY"] = "your_groq_api_key"
+NASA_API_KEY = "your_nasa_api_key"
 
 embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
 Settings.embed_model = embed_model
@@ -71,14 +71,6 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
-def normalize_topic(word):
-    if word.endswith("ies"):
-        return word[:-3] + "y"
-    elif word.endswith("es"):
-        return word[:-2]
-    elif word.endswith("s") and not word.endswith("ss"):
-        return word[:-1]
-    return word
 
 def extract_topic(query):
     import re
@@ -86,15 +78,20 @@ def extract_topic(query):
     def normalize(text):
         text = text.lower()
         text = re.sub(r"[?.,!]", "", text)
-        if text.endswith("ies"):
-            return text[:-3] + "y"
-        elif text.endswith("es"):
-            return text[:-2]
-        elif text.endswith("s") and not text.endswith("ss"):
-            return text[:-1]
         return text
 
+    def lemmatize(word):
+        if word.endswith("ies"):
+            return word[:-3] + "y"
+        elif word.endswith("es"):
+            return word[:-2]
+        elif word.endswith("s") and not word.endswith("ss"):
+            return word[:-1]
+        return word
+
     query = normalize(query)
+    words = query.split()
+    normalized_query = " ".join([lemmatize(w) for w in words])
 
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon",
@@ -117,14 +114,16 @@ def extract_topic(query):
         "curiosity", "ingenuity", "insight lander", "space weather", "planetary defense",
         "double asteroid redirect test"
     ]
-    
+
     for topic in sorted(known_topics, key=len, reverse=True):
-        pattern = r"\b" + re.escape(normalize(topic)) + r"\b"
-        if re.search(pattern, query):
+        topic_words = [lemmatize(w) for w in topic.split()]
+        normalized_topic = " ".join(topic_words)
+        pattern = r"" + re.escape(normalized_topic) + r""
+        if re.search(pattern, normalized_query):
             return topic
 
     return "space"
-    
+
 def get_wikipedia_summary(topic):
     try:
         topic = topic.replace(" ", "_")
