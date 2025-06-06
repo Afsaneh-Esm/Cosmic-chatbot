@@ -72,7 +72,7 @@ def get_next_full_moon():
     except:
         return "Lunar data unavailable."
 
-def search_arxiv(query, max_results=4):
+def search_arxiv(query, max_results=10):
     search = arxiv.Search(query=query, max_results=max_results)
     return [f"{res.title}\n\n{res.summary}" for res in search.results()]
 
