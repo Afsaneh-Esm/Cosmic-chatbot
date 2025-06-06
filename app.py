@@ -194,5 +194,38 @@ Use only the information provided in the context below. Do not make up facts or 
 
 If the topic is a well-known scientific concept (e.g. black holes, dark matter, cosmic microwave background), expand the explanation slightly beyond the raw definition to include historical context, scientific significance, or how it's observed.
 
-Respond in a way that balances scientific accuracy and accessibility
+Respond in a way that balances scientific accuracy and accessibility — make it understandable for non-experts without oversimplifying key facts.
 
+Context:
+{final_context}
+
+Question: {query}
+
+Answer:
+"""
+        response = llm.complete(prompt=prompt)
+
+        st.subheader("🔊 Topic Extracted:")
+        st.code(topic)
+
+        st.subheader("🔊 Wikipedia or DuckDuckGo Summary Used:")
+        st.code(wiki_context, language="markdown")
+
+        st.subheader("🛋️ Final Context Sent to LLM:")
+        st.code(final_context[:2000], language="markdown")
+
+        st.subheader("💬 Cosmic Answer")
+        st.markdown(response.text)
+
+        if image_url:
+            st.image(image_url, caption=f"Wikipedia image for {topic}", use_container_width=True)
+
+        if page_url:
+            st.markdown(f"[🔗 Read more on Wikipedia]({page_url})")
+
+        if topic.lower() == "cosmic microwave background":
+            st.markdown("📊 Sample visual of CMB intensity vs wavelength:")
+            plot_cmb_example()
+
+else:
+    st.info("Enter a question about the cosmos to begin your journey! 🚀")
