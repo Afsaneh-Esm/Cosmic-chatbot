@@ -71,9 +71,23 @@ def get_next_full_moon():
         return "🌕 Next full moon: " + row.get_text(" ", strip=True)
     except:
         return "Lunar data unavailable."
+def get_wikipedia_summary(query):
+    try:
+        topic = query.replace(" ", "_")
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{topic}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("extract", "No summary found.")
+        return "No Wikipedia summary available."
+    except:
+        return "Wikipedia fetch failed."
 
 def search_arxiv(query, max_results=10):
-    search = arxiv.Search(query=query, max_results=max_results)
+    search = arxiv.Search(query=query,
+        max_results=max_results,
+        sort_by=arxiv.SortCriterion.Relevance,
+        sort_order=arxiv.SortOrder.Descending)
     return [f"{res.title}\n\n{res.summary}" for res in search.results()]
 
 # ─────────────── 5. Streamlit App ───────────────
@@ -111,9 +125,9 @@ if query:
         index = VectorStoreIndex.from_documents(docs)
         nodes = index.as_retriever().retrieve(query)
         context = "\n\n".join([n.get_content()[:500] for n in nodes])
-
+        wiki_context = get_wikipedia_summary(query)
         live_context = get_solar_activity() + "\n" + get_next_full_moon()
-        final_context = live_context + "\n\n" + context
+        final_context = wiki_context + "\n\n" + live_context + "\n\n" + arxiv_context
 
         prompt = f"""
 You're a cosmic assistant. Use the following context to answer clearly and accurately.
