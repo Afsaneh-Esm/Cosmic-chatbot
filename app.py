@@ -77,7 +77,7 @@ def get_next_full_moon():
 def get_topic_embedding_match(query):
     known_topics = [
         "black hole", "white dwarf", "milky way", "solar system", "event horizon", "big bang",
-        "dark matter", "neutron star", "cosmic microwave background", "supernova",
+        "dark matter", "neutron star", "cosmic microwave background", "supernova", "Jupiter's composition",
         "gravitational wave", "red giant", "pulsar", "x-ray binary", "solar flare",
         "aurora borealis", "exoplanet", "hot jupiter", "super-earth", "ice giant",
         "terrestrial planet", "planet nine", "oort cloud", "kuiper belt", "asteroid belt",
