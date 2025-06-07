@@ -149,7 +149,7 @@ def search_arxiv(query, max_results=5):
 def plot_cmb_example():
     x = np.linspace(0.1, 10, 100)
     y = 1 / (x ** 2)
-    fig, ax = plt.subplots(figsize=(4, 2))
+    fig, ax = plt.subplots(figsize=(3, 1.5))
     ax.plot(x, y)
     ax.set_title("CMB Intensity Curve")
     ax.set_xlabel("Wavelength")
