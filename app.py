@@ -149,7 +149,7 @@ def search_arxiv(query, max_results=5):
 def plot_cmb_example():
     x = np.linspace(0.1, 10, 100)
     y = 1 / (x ** 2)
-    fig, ax = plt.subplots(figsize=(3, 1.5))
+    fig, ax = plt.subplots(figsize=(2, 1))
     ax.plot(x, y)
     ax.set_title("CMB Intensity Curve")
     ax.set_xlabel("Wavelength")
@@ -223,7 +223,7 @@ Answer:
         st.markdown(response.text)
 
         if image_url:
-            st.image(image_url, caption=f"Wikipedia image for {topic}", width=300)
+            st.image(image_url, caption=f"Wikipedia image for {topic}", width=350)
 
         if page_url:
             st.markdown(f"[🔗 Read more on Wikipedia]({page_url})")
