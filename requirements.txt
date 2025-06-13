@@ -10,3 +10,4 @@ llama-index>=0.10.0
 sentence-transformers
 huggingface-hub
 
+
