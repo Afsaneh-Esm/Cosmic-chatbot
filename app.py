@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ephem
 from llama_index.core import Document, VectorStoreIndex, Settings
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings import HuggingFaceEmbedding
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
 
