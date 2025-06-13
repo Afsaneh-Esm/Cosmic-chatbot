@@ -9,4 +9,4 @@ torch
 ephem
 matplotlib
 numpy
-
+huggingface-hub
