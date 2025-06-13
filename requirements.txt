@@ -7,7 +7,7 @@ numpy
 matplotlib
 ephem
 llama-index>=0.10.0
+llama-index-embeddings-huggingface>=0.1.0
 sentence-transformers
-huggingface-hub
-
+huggingface-hub>=0.20.0
 
