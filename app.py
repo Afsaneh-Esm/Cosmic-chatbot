@@ -10,10 +10,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import ephem
 from llama_index.core import Document, VectorStoreIndex, Settings
-from llama_index.embeddings import HuggingFaceEmbedding
+from llama_index.embeddings.base import BaseEmbedding
+from sentence_transformers import SentenceTransformer
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
 
+# ─────────────── Custom Embedding ───────────────
+class MyEmbedding(BaseEmbedding):
+    def __init__(self):
+        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+
+    def embed(self, text: str) -> list[float]:
+        return self.model.encode(text).tolist()
+
+    def embed_batch(self, texts: list[str]) -> list[list[float]]:
+        return [self.model.encode(t).tolist() for t in texts]
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
 st.markdown("""
@@ -34,7 +45,7 @@ html, body, [class*="css"] {
 os.environ["GROQ_API_KEY"] = "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"
 NASA_API_KEY = "rD8cgucyU9Rgcn1iTaOeh7mo1CPd6oN4CYThCdjg"
 
-embed_model = HuggingFaceEmbedding(model_name="all-MiniLM-L6-v2", device="cpu")
+embed_model = MyEmbedding()
 Settings.embed_model = embed_model
 llm = Groq(model="llama3-70b-8192", api_key=os.environ["GROQ_API_KEY"])
 Settings.llm = llm
