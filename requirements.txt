@@ -11,3 +11,4 @@ llama-index-embeddings-huggingface>=0.1.0
 sentence-transformers
 huggingface-hub>=0.20.0
 
+
