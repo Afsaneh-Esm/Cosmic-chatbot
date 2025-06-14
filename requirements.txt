@@ -1,3 +1,6 @@
+llama-index==0.10.32
+llama-index-llms-groq
+sentence-transformers
 streamlit
 requests
 beautifulsoup4
@@ -6,11 +9,5 @@ arxiv
 numpy
 matplotlib
 ephem
-llama-index>=0.10.30
-sentence-transformers
 huggingface-hub>=0.20.0
-llama-index-llms-groq
-
-
-
 
