@@ -12,9 +12,10 @@ import ephem
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
+from llama_index.core.embeddings.base import BaseEmbedding
 
 # ————————— Custom Embedding Class —————————
-class MyEmbedding:
+class MyEmbedding(BaseEmbedding):
     def __init__(self):
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -23,6 +24,7 @@ class MyEmbedding:
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
         return [self.model.encode(t).tolist() for t in texts]
+
 
 # ————————— 2. Page config and CSS —————————
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
