@@ -14,6 +14,7 @@ from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
 from llama_index.core.embeddings.base import BaseEmbedding
 
+
 # ————————— Custom Embedding Class —————————
 class MyEmbedding(BaseEmbedding):
     def __init__(self):
