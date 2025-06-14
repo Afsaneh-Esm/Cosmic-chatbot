@@ -12,7 +12,7 @@ import ephem
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
-from llama_index.embeddings.base import BaseEmbedding
+from llama_index.core.embeddings.base import BaseEmbedding
 
 # ————————— Custom Embedding Class —————————
 class MyEmbedding(BaseEmbedding):
