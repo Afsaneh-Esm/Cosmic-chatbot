@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import ephem
 from llama_index.core import Document, VectorStoreIndex, Settings
 from llama_index.embeddings.base import BaseEmbedding
-from sentence_transformers import SentenceTransformer
 from llama_index.llms.groq import Groq
 from sentence_transformers import SentenceTransformer, util
 
@@ -25,6 +24,7 @@ class MyEmbedding(BaseEmbedding):
 
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
         return [self.model.encode(t).tolist() for t in texts]
+
 # ─────────────── 2. Page config and CSS ───────────────
 st.set_page_config(page_title="🌌 Cosmic Chatbot", layout="wide")
 st.markdown("""
@@ -97,12 +97,9 @@ def get_topic_embedding_match(query):
         "curiosity", "space debris", "iss", "apollo program", "voyager 1", "hubble space telescope",
         "james webb space telescope", "solar eclipse", "lunar eclipse", "solar neutrino"
     ]
-# Splitting the question based on common words
     parts = re.split(r"[,.;:!?&]| and | or ", query.lower())
-
     best_topic = None
     best_score = -1
-
     for part in parts:
         part = part.strip()
         if not part:
@@ -112,13 +109,10 @@ def get_topic_embedding_match(query):
         similarities = util.cos_sim(query_emb, topic_embs)[0]
         top_idx = int(np.argmax(similarities))
         score = float(similarities[top_idx])
-
         if score > best_score:
             best_score = score
             best_topic = known_topics[top_idx]
-
     return best_topic
-
 
 def get_wikipedia_summary(topic):
     try:
@@ -178,8 +172,8 @@ title, img_url, desc = get_apod_image()
 if img_url:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-     st.image(img_url, caption=title, use_container_width=True)
-     st.markdown(f"<p style='text-align: center; font-size: 14px;'>{desc}</p>", unsafe_allow_html=True)
+        st.image(img_url, caption=title, use_container_width=True)
+        st.markdown(f"<p style='text-align: center; font-size: 14px;'>{desc}</p>", unsafe_allow_html=True)
 
 st.subheader("📰 Latest NASA News")
 for title, link in get_nasa_news():
@@ -207,10 +201,6 @@ if query:
 You are a helpful and knowledgeable cosmic assistant that answers space-related questions clearly, accurately, and in an educational tone suitable for curious learners.
 
 Use only the information provided in the context below. Do not make up facts or speculate. If the answer is not present in the context, reply: "I don't know based on the available data."
-
-If the topic is a well-known scientific concept (e.g. black holes, dark matter, cosmic microwave background), expand the explanation slightly beyond the raw definition to include historical context, scientific significance, or how it's observed.
-
-Respond in a way that balances scientific accuracy and accessibility — make it understandable for non-experts without oversimplifying key facts.
 
 Context:
 {final_context}
@@ -242,6 +232,6 @@ Answer:
         if topic.lower() == "cosmic microwave background":
             st.markdown("📊 Sample visual of CMB intensity vs wavelength:")
             plot_cmb_example()
-
 else:
     st.info("Enter a question about the cosmos to begin your journey! 🚀")
+
