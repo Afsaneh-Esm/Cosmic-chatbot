@@ -99,7 +99,7 @@ numpy
 
 ## ✍️ Author
 
-* Afsaneh [🔗 LinkedIn](https://www.linkedin.com)
+* Afsaneh [🔗 LinkedIn](www.linkedin.com/in/afsaneh-esm)
 
 ---
 
@@ -113,5 +113,5 @@ numpy
 
 ## 📚 License
 
-MIT License (or your choice)
+MIT License
 
