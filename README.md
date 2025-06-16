@@ -99,7 +99,7 @@ numpy
 
 ## ✍️ Author
 
-* Afsaneh [🔗 LinkedIn](www.linkedin.com/in/afsaneh-esm)
+* Afsaneh(www.linkedin.com/in/afsaneh-esm)
 
 ---
 
